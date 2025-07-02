@@ -1,0 +1,29 @@
+name: Deploy to EC2 with Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: SSH & Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd app-directory || git clone https://github.com/ansarali41/node-js-ec2.git app-directory
+          cd app-directory
+          git pull origin main
+          docker build -t node-app .
+          docker stop node-app || true
+          docker rm node-app || true
+          docker run -d -p 3000:3000 --name node-app node-app
